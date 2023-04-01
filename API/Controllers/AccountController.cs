@@ -24,16 +24,18 @@ namespace API.Controllers
 
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<ActionResult<UserDto>> Login(LoginDto loginDto) 
+        public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
         {
-            var user = await userManager.FindByEmailAsync(loginDto.Email);
+            var user = await userManager.Users.Include(u => u.Photos)
+                .FirstOrDefaultAsync(u => u.Email == loginDto.Email);
+
             if (user == null)
             {
                 return Unauthorized();
             }
 
             var success = await userManager.CheckPasswordAsync(user, loginDto.Password);
-            if (!success) 
+            if (!success)
             {
                 return Unauthorized();
             }
@@ -77,17 +79,19 @@ namespace API.Controllers
         [HttpGet]
         public async Task<ActionResult<UserDto>> GetCurrentUser()
         {
-            var user = await userManager.FindByEmailAsync(User.FindFirstValue(ClaimTypes.Email));
+            var user = await userManager.Users.Include(u => u.Photos)
+                .FirstOrDefaultAsync(u => u.Email == User.FindFirstValue(ClaimTypes.Email));
+
             return CreateUserDto(user);
         }
 
-        
+
         private UserDto CreateUserDto(AppUser user)
         {
             return new UserDto
             {
                 DisplayName = user.DisplayName,
-                Image = null,
+                Image = user?.Photos?.FirstOrDefault(u => u.IsMain)?.Url,
                 Token = tokenSevice.CreateToken(user),
                 Username = user.UserName
             };
