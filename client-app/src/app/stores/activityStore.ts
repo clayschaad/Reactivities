@@ -6,7 +6,7 @@ import { store } from "./store";
 import { Profile } from "../models/profile";
 
 export default class ActitivtyStore {
-    activityRegistry  = new Map<string, Activity>();
+    activityRegistry = new Map<string, Activity>();
     selectedActivity: Activity | undefined = undefined;
     editMode = false;
     loading = false;
@@ -17,7 +17,7 @@ export default class ActitivtyStore {
     }
 
     get activitiesByDate() {
-        return Array.from(this.activityRegistry.values()).sort((a, b) => 
+        return Array.from(this.activityRegistry.values()).sort((a, b) =>
             a.date!.getTime() - b.date!.getTime());
     }
 
@@ -25,9 +25,9 @@ export default class ActitivtyStore {
         return Object.entries(
             this.activitiesByDate.reduce((activities, activity) => {
                 const date = format(activity.date!, 'dd MMM yyyy');
-                activities[date] = activities[date] ? [...activities[date], activity] :  [activity];
+                activities[date] = activities[date] ? [...activities[date], activity] : [activity];
                 return activities;
-            }, {} as {[key: string]: Activity[]})
+            }, {} as { [key: string]: Activity[] })
         )
     }
 
@@ -35,7 +35,7 @@ export default class ActitivtyStore {
         this.setLoadingInitial(true);
         try {
             const activities = await agent.Activities.list();
-            activities.forEach(activity =>  {
+            activities.forEach(activity => {
                 this.setActivity(activity);
             })
             this.setLoadingInitial(false);
@@ -77,7 +77,7 @@ export default class ActitivtyStore {
         this.activityRegistry.set(activity.id, activity);
     }
 
-    private getActivity = (id: string) =>  {
+    private getActivity = (id: string) => {
         return this.activityRegistry.get(id);
     }
 
@@ -107,7 +107,7 @@ export default class ActitivtyStore {
             await agent.Activities.update(activity);
             runInAction(() => {
                 if (activity.id) {
-                    let updatedActivity = {...this.getActivity(activity.id), ...activity}
+                    let updatedActivity = { ...this.getActivity(activity.id), ...activity }
                     this.activityRegistry.set(activity.id, updatedActivity as Activity);
                     this.selectedActivity = updatedActivity as Activity;
                 }
@@ -127,13 +127,13 @@ export default class ActitivtyStore {
             })
         } catch (error) {
             console.log(error);
-            runInAction(() =>  {
+            runInAction(() => {
                 this.loading = false;
             })
         }
     }
 
-    updateAttendence = async () =>  {
+    updateAttendence = async () => {
         const user = store.userStore.user;
         this.loading = true;
         try {
@@ -155,19 +155,23 @@ export default class ActitivtyStore {
             runInAction(() => this.loading = false);
         }
     }
-    
+
     cancelActivityToggle = async () => {
         this.loading = true;
         try {
             await agent.Activities.attend(this.selectedActivity!.id);
-            runInAction(() =>  {
+            runInAction(() => {
                 this.selectedActivity!.isCancelled = !this.selectedActivity?.isCancelled;
                 this.activityRegistry.set(this.selectedActivity!.id, this.selectedActivity!);
             })
         } catch (error) {
             console.log(error);
         } finally {
-            runInAction(() =>  this.loading = false);
+            runInAction(() => this.loading = false);
         }
+    }
+
+    clearSelectedActivity = () => {
+        this.selectedActivity = undefined;
     }
 }
